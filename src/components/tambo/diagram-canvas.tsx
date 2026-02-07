@@ -53,7 +53,11 @@ function RightPanelStreamingSkeleton() {
   );
 }
 
-export function DiagramCanvas() {
+interface DiagramCanvasProps {
+  canvasRef?: React.RefObject<HTMLDivElement | null>;
+}
+
+export function DiagramCanvas({ canvasRef }: DiagramCanvasProps) {
   const { thread, streaming } = useTambo();
   const messages = thread?.messages ?? [];
 
@@ -87,7 +91,10 @@ export function DiagramCanvas() {
       aria-label="Diagram canvas"
     >
       <DiagramCanvasFillContext.Provider value={true}>
-        <div className="flex-1 min-h-0 w-full flex flex-col diagram-canvas-dotted">
+        <div
+          ref={canvasRef}
+          className="flex-1 min-h-0 w-full flex flex-col diagram-canvas-dotted"
+        >
           {showStreamingSkeleton ? (
             <RightPanelStreamingSkeleton />
           ) : latestDiagram ? (
