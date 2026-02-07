@@ -247,7 +247,10 @@ const MessageSuggestionsStatus = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "p-2 rounded-md text-sm bg-transparent",
+        "p-2 rounded-md text-sm",
+        error || isGenerating || (thread?.generationStage && thread.generationStage !== GenerationStage.COMPLETE)
+          ? "bg-muted/60 dark:bg-white/15 text-foreground dark:text-white/90"
+          : "bg-transparent",
         !error &&
           !isGenerating &&
           (!thread?.generationStage ||
@@ -261,7 +264,7 @@ const MessageSuggestionsStatus = React.forwardRef<
     >
       {/* Error state */}
       {error && (
-        <div className="p-2 rounded-md text-sm bg-red-50 text-red-500">
+        <div className="p-2 rounded-md text-sm bg-red-50 dark:bg-red-950/50 text-red-500 dark:text-red-400">
           <p>{error.message}</p>
         </div>
       )}
@@ -293,7 +296,7 @@ function GenerationStageContent({
   }
   if (isGenerating) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground">
+      <div className="flex items-center gap-2 text-muted-foreground dark:text-white/80">
         <Loader2Icon className="h-4 w-4 animate-spin" />
         <p>Generating suggestions...</p>
       </div>
@@ -337,8 +340,8 @@ const MessageSuggestionsList = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "flex space-x-2 overflow-x-auto pb-2 rounded-md bg-transparent min-h-[2.5rem]",
-        isGenerating ? "opacity-70" : "",
+        "flex space-x-2 overflow-x-auto pb-2 rounded-md min-h-[2.5rem]",
+        isGenerating ? "opacity-90 bg-muted/40 dark:bg-white/10" : "bg-transparent",
         className,
       )}
       data-slot="message-suggestions-list"
@@ -379,7 +382,7 @@ const MessageSuggestionsList = React.forwardRef<
           placeholders.map((_, index) => (
             <div
               key={`placeholder-${index}`}
-              className="py-2 px-2.5 rounded-2xl text-xs border border-flat bg-muted/20 text-transparent animate-pulse"
+              className="py-2 px-2.5 rounded-2xl text-xs border border-border dark:border-white/20 bg-muted/50 dark:bg-white/15 text-transparent animate-pulse"
               data-placeholder-index={index}
             >
               <span className="invisible">Placeholder</span>
@@ -401,12 +404,12 @@ function getSuggestionButtonClassName({
   isSelected: boolean;
 }) {
   if (isGenerating) {
-    return "bg-muted/50 text-muted-foreground";
+    return "bg-muted/50 dark:bg-white/15 text-muted-foreground dark:text-white/80";
   }
   if (isSelected) {
     return "bg-accent text-accent-foreground";
   }
-  return "bg-background hover:bg-accent hover:text-accent-foreground";
+  return "bg-background hover:bg-accent hover:text-accent-foreground dark:bg-white/10 dark:hover:bg-white/20 dark:text-white/90";
 }
 
 export { MessageSuggestions, MessageSuggestionsList, MessageSuggestionsStatus };

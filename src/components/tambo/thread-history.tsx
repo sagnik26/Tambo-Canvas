@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useThreadSwitch } from "@/lib/thread-switch-context";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   type TamboThread,
@@ -371,6 +372,7 @@ const ThreadHistoryList = React.forwardRef<
     generateThreadName,
     refetch,
   } = useThreadHistoryContext();
+  const { setLoadingThreadId } = useThreadSwitch();
 
   const [editingThread, setEditingThread] = React.useState<TamboThread | null>(
     null,
@@ -430,12 +432,15 @@ const ThreadHistoryList = React.forwardRef<
 
   const handleSwitchThread = async (threadId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (threadId === currentThread?.id) return;
 
     try {
+      setLoadingThreadId(threadId);
       switchCurrentThread(threadId);
       onThreadChange?.();
     } catch (error) {
       console.error("Failed to switch thread:", error);
+      setLoadingThreadId(null);
     }
   };
 
