@@ -42,93 +42,93 @@ export default function LandingPage() {
       <div className="relative z-10 flex h-screen min-h-[100dvh] flex-col overflow-hidden">
         {/* Nav */}
         <nav className="flex shrink-0 items-center justify-between px-6 py-5 sm:px-8 md:px-12">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
-          className="text-lg font-semibold tracking-tight"
-        >
-          <span className="text-white/90">Tambo</span>
-          <GradientText className="ml-1.5">Canvas</GradientText>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          <Link
-            href="/chat"
-            className={cn(
-              "rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white/90",
-              "transition-colors hover:bg-white/10 hover:text-white",
-            )}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="text-lg font-semibold tracking-tight"
           >
-            Try Now
-          </Link>
-        </motion.div>
+            <span className="text-white/90">Tambo</span>
+            <GradientText className="ml-1.5">Flow</GradientText>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            <Link
+              href="/chat"
+              className={cn(
+                "rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white/90",
+                "transition-colors hover:bg-white/10 hover:text-white",
+              )}
+            >
+              Try Now
+            </Link>
+          </motion.div>
         </nav>
 
         {/* Hero */}
         <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-12 text-center sm:px-8 md:px-12">
-        <motion.p
-          variants={fadeUp}
-          initial="initial"
-          animate="animate"
-          transition={{ duration, delay: stagger * 0 }}
-          className="mb-4 text-sm font-medium uppercase tracking-widest text-cyan-400/90"
-        >
-          AI-Powered Diagrams
-        </motion.p>
-
-        <motion.h1
-          variants={fadeUp}
-          initial="initial"
-          animate="animate"
-          transition={{ duration, delay: stagger * 1 }}
-          className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
-        >
-          Turn concepts into{" "}
-          <GradientText className="font-bold">stunning diagrams</GradientText>
-          <br />
-          in seconds
-        </motion.h1>
-
-        <motion.p
-          variants={fadeUp}
-          initial="initial"
-          animate="animate"
-          transition={{ duration, delay: stagger * 2 }}
-          className="mt-10 max-w-2xl text-lg text-white/70 sm:text-2xl"
-        >
-          Describe your flow in plain language.
-        </motion.p>
-
-        <motion.p
-          variants={fadeUp}
-          initial="initial"
-          animate="animate"
-          transition={{ duration, delay: stagger * 2 }}
-          className="mt-2 max-w-3xl text-sm text-white/70 font-bold sm:text-lg"
-        >
-          Watch AI craft clean block diagrams, sequence diagrams, and more —
-          instantly.
-        </motion.p>
-
-        <motion.div
-          variants={fadeUp}
-          initial="initial"
-          animate="animate"
-          transition={{ duration, delay: stagger * 3 }}
-          className="mt-10 flex flex-wrap items-center justify-center gap-4"
-        >
-          <GlowButton href="/chat">Start creating for free</GlowButton>
-          <Link
-            href="/chat"
-            className="rounded-xl border border-white/15 bg-white/5 px-6 py-3.5 text-base font-semibold text-white/90 transition-colors hover:bg-white/10 hover:text-white"
+          <motion.p
+            variants={fadeUp}
+            initial="initial"
+            animate="animate"
+            transition={{ duration, delay: stagger * 0 }}
+            className="mb-4 text-sm font-medium uppercase tracking-widest text-cyan-400/90"
           >
-            Open Editor
-          </Link>
-        </motion.div>
+            AI-Powered Diagrams
+          </motion.p>
+
+          <motion.h1
+            variants={fadeUp}
+            initial="initial"
+            animate="animate"
+            transition={{ duration, delay: stagger * 1 }}
+            className="max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
+          >
+            Turn concepts into{" "}
+            <GradientText className="font-bold">stunning diagrams</GradientText>
+            <br />
+            in seconds
+          </motion.h1>
+
+          <motion.p
+            variants={fadeUp}
+            initial="initial"
+            animate="animate"
+            transition={{ duration, delay: stagger * 2 }}
+            className="mt-10 max-w-2xl text-lg text-white/70 sm:text-2xl"
+          >
+            Describe your flow in plain language.
+          </motion.p>
+
+          <motion.p
+            variants={fadeUp}
+            initial="initial"
+            animate="animate"
+            transition={{ duration, delay: stagger * 2 }}
+            className="mt-2 max-w-3xl text-sm text-white/70 font-bold sm:text-lg"
+          >
+            Watch AI craft clean block diagrams, sequence diagrams, and more —
+            instantly.
+          </motion.p>
+
+          <motion.div
+            variants={fadeUp}
+            initial="initial"
+            animate="animate"
+            transition={{ duration, delay: stagger * 3 }}
+            className="mt-10 flex flex-wrap items-center justify-center gap-4"
+          >
+            <GlowButton href="/chat">Start creating for free</GlowButton>
+            <Link
+              href="/chat"
+              className="rounded-xl border border-white/15 bg-white/5 px-6 py-3.5 text-base font-semibold text-white/90 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              Open Editor
+            </Link>
+          </motion.div>
         </main>
       </div>
 
@@ -231,7 +231,7 @@ export default function LandingPage() {
             One chat. Any diagram.
           </h2>
           <p className="mt-3 text-white/60">
-            Block diagrams, sequence diagrams, mindmaps—generated from your
+            Block diagrams, sequence diagrams, mindmaps — generated from your
             words. No drawing required.
           </p>
           <div className="mt-8">
