@@ -2,7 +2,6 @@
 
 import { UserMenu } from "@/components/user-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ChatEmptyHint } from "@/components/tambo/chat-empty-hint";
 import { DiagramCanvas } from "@/components/tambo/diagram-canvas";
 import { MessageThreadFull } from "@/components/tambo/message-thread-full";
 import { cn } from "@/lib/utils";
@@ -38,8 +37,7 @@ export default function ChatPage() {
   return (
     <div className="relative flex h-screen w-full bg-background">
       <div className="relative flex h-full w-full max-w-[35%] shrink-0 flex-col border-r border-border bg-background">
-        <ChatEmptyHint />
-        <MessageThreadFull hideThreadHistory />
+        <MessageThreadFull />
       </div>
       <DiagramCanvas canvasRef={diagramRef} />
       <div

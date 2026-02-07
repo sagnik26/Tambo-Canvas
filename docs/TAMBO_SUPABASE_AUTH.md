@@ -61,7 +61,31 @@ After changing to **None**, sign out and sign back in (or refresh the session), 
 
 ---
 
-## 4. Optional: OAuth (e.g. Google)
+## 4. Google (and other OAuth) login
 
-- In Supabase: **Authentication** → **Providers** → enable **Google** (or others) and set Client ID/Secret.
-- In your login page you can add a “Sign in with Google” button that calls `supabase.auth.signInWithOAuth({ provider: 'google' })` and redirects to the callback.
+The app includes a **Sign in with Google** button on `/login`. To enable it:
+
+### Google Cloud (credentials)
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) and create or select a project.
+2. **APIs & Services** → **Credentials** → **Create credentials** → **OAuth client ID**.
+3. If prompted, configure the **OAuth consent screen** (External user type is fine; add your app name and support email).
+4. Application type: **Web application**.
+5. Under **Authorized redirect URIs** add:
+   - `https://<your-project-ref>.supabase.co/auth/v1/callback`
+   - You find the exact URL in Supabase: **Authentication** → **Providers** → **Google** → “Callback URL (for OAuth)”.
+6. Copy the **Client ID** and **Client secret**.
+
+### Supabase (Google provider)
+
+1. **Authentication** → **Providers** → **Google** → enable.
+2. Paste **Client ID** and **Client secret** from Google Cloud.
+3. Save.
+
+### Redirect URLs
+
+Ensure your app’s callback is allowed in Supabase:
+
+- **Authentication** → **URL Configuration** → **Redirect URLs**: include `http://localhost:3000/auth/callback` and `https://yourdomain.com/auth/callback` (or your production URL).
+
+After that, **Sign in with Google** on the login page will redirect to Google and then back to the app; the existing `/auth/callback` route exchanges the code and redirects to `/chat` (or the `next` query param).
