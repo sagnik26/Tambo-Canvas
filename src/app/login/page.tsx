@@ -4,9 +4,9 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/chat";
   const errorParam = searchParams.get("error");
@@ -201,5 +201,32 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0f] px-4 text-white">
+      <div className="w-full max-w-sm space-y-8">
+        <div className="text-center">
+          <Link href="/" className="text-xl font-semibold">
+            Tambo{" "}
+            <span className="bg-gradient-to-r from-cyan-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent">
+              Canvas
+            </span>
+          </Link>
+          <h1 className="mt-6 text-2xl font-bold">Sign in</h1>
+          <p className="mt-2 text-sm text-white/60">Loading…</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginForm />
+    </Suspense>
   );
 }
