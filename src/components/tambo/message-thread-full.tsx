@@ -1,6 +1,7 @@
 "use client";
 
 import type { messageVariants } from "@/components/tambo/message";
+import { DiagramSummaryButton } from "@/components/tambo/diagram-summary-modal";
 import {
   MessageInput,
   MessageInputError,
@@ -123,6 +124,7 @@ export const MessageThreadFull = React.forwardRef<
           <MessageInput>
             <MessageInputTextarea placeholder="Describe your diagram..." />
             <MessageInputToolbar>
+              <DiagramSummaryButton />
               <MessageInputSubmitButton />
             </MessageInputToolbar>
             <MessageInputError />

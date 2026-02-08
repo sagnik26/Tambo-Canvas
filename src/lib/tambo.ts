@@ -121,6 +121,31 @@ function nodesEdgesToMermaid(
   return lines.join("\n");
 }
 
+/** Build a short text summary (bullet list) of the flow for accessibility or documentation. */
+function nodesEdgesToSummary(
+  nodes: (z.infer<typeof reactFlowNodeSchema> & { data?: { label?: string } })[],
+  edges: z.infer<typeof reactFlowEdgeSchema>[],
+): string {
+  if (nodes.length === 0) return "Empty diagram (no steps).";
+  const bullets = nodes.map((node, i) => {
+    const label = getNodeLabel(node, i);
+    const role =
+      node.type === "input"
+        ? " (start)"
+        : node.type === "output"
+          ? " (end)"
+          : "";
+    return `• ${label}${role}`;
+  });
+  const intro = `This flow has ${nodes.length} step${nodes.length === 1 ? "" : "s"}.`;
+  const list = bullets.join("\n");
+  const edgeNote =
+    edges.length > 0
+      ? `\n\n${edges.length} connection${edges.length === 1 ? "" : "s"} between the steps above.`
+      : "";
+  return `${intro}\n\n${list}${edgeNote}`;
+}
+
 export const tools: TamboTool[] = [
   {
     name: "countryPopulation",
@@ -377,6 +402,38 @@ export const tools: TamboTool[] = [
         .string()
         .optional()
         .describe("Short explanation for the user"),
+    }),
+  },
+  {
+    name: "summarizeDiagram",
+    description:
+      "Returns a short text summary (bullet list) of the current flow diagram for accessibility or documentation. Use after generating or enhancing a diagram when the user asks for a summary, description, or documentation of the flow, or to explain what the diagram shows.",
+    tool: async ({
+      currentNodes,
+      currentEdges,
+    }: {
+      currentNodes: (z.infer<typeof reactFlowNodeSchema> & { data?: { label?: string } })[];
+      currentEdges: z.infer<typeof reactFlowEdgeSchema>[];
+    }) => {
+      const nodes = Array.isArray(currentNodes) ? currentNodes : [];
+      const edges = Array.isArray(currentEdges) ? currentEdges : [];
+      const summary = nodesEdgesToSummary(nodes, edges);
+      return { summary };
+    },
+    inputSchema: z.object({
+      currentNodes: z
+        .array(reactFlowNodeSchema)
+        .describe(
+          "Current nodes in the flow diagram (from the latest FlowDiagram component)",
+        ),
+      currentEdges: z
+        .array(reactFlowEdgeSchema)
+        .describe(
+          "Current edges in the flow diagram (from the latest FlowDiagram component)",
+        ),
+    }),
+    outputSchema: z.object({
+      summary: z.string().describe("Short text summary or bullet list of the flow"),
     }),
   },
 ];

@@ -1565,25 +1565,37 @@ const MessageInputToolbar = React.forwardRef<
       {...props}
     >
       <div className="flex items-center gap-2">
-        {/* Left side - everything except submit button */}
+        {/* Left side - everything except submit button and toolbar-right */}
         {React.Children.map(children, (child): React.ReactNode => {
           if (
             React.isValidElement(child) &&
             child.type === MessageInputSubmitButton
           ) {
-            return null; // Don't render submit button here
+            return null;
+          }
+          if (
+            React.isValidElement(child) &&
+            (child.props as { "data-slot"?: string })["data-slot"] === "toolbar-right"
+          ) {
+            return null;
           }
           return child;
         })}
       </div>
       <div className="flex items-center gap-2">
-        {/* Right side - only submit button */}
+        {/* Right side - toolbar-right slot then submit button */}
         {React.Children.map(children, (child): React.ReactNode => {
+          if (
+            React.isValidElement(child) &&
+            (child.props as { "data-slot"?: string })["data-slot"] === "toolbar-right"
+          ) {
+            return child;
+          }
           if (
             React.isValidElement(child) &&
             child.type === MessageInputSubmitButton
           ) {
-            return child; // Only render submit button here
+            return child;
           }
           return null;
         })}
