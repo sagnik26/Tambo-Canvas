@@ -1,101 +1,166 @@
 # TamboFlow
 
-A Next.js diagramming app powered by **Tambo AI**: chat on the left, flow diagrams on the right. Users describe a diagram in natural language; the AI generates or updates React Flow diagrams via tools and generative/interactable components.
+AI-powered flow diagrams from natural language — chat on the left, diagram on the right. Built with Next.js, Tambo AI, and React Flow.
+
+**[Watch the demo on YouTube](https://www.youtube.com/watch?v=9upEMbKmFOM)**
 
 ---
 
-## Quick start
+## Features
+
+- **Describe flows in plain language** — The AI generates or updates the diagram as you chat.
+- **Live diagram canvas** — React Flow on the right: pan, zoom, and drag nodes.
+- **Node details** — Click a node to open a side panel. The AI can fill description, suggestions, notes, tags, and related nodes. An **Explain** button asks the AI to populate the panel; the chat input is pre-filled with “Describe this node – [label]”.
+- **Summary and export** — Get a text summary of the flow or export the diagram as PNG.
+- **Multiple threads** — Each thread has its own diagram state; theme toggle (dark/light).
+- **Auth** — Supabase (email/password, optional Google OAuth). Chat is protected; threads and messages are scoped per user.
+
+---
+
+## Tech stack
+
+| Category   | Technologies |
+| ---------- | ------------ |
+| Framework  | Next.js 15 (App Router), React 19, TypeScript |
+| AI / UX    | Tambo AI (`@tambo-ai/react`, `@tambo-ai/typescript-sdk`) |
+| Diagrams   | React Flow (`reactflow`) |
+| Charts     | Recharts (optional Graph component) |
+| Styling    | Tailwind CSS v4, class-variance-authority, tailwind-merge |
+| Auth       | Supabase (`@supabase/supabase-js`, `@supabase/ssr`) |
+| Editor/UI  | Tiptap, Radix UI, Lucide icons |
+| Other      | Zod, Framer Motion, html-to-image, highlight.js, react-markdown, DOM Purify |
+| API        | Optional OpenAI via `/api/generate-flow` for flow generation |
+
+---
+
+## Tambo features used
+
+- **Provider** — `TamboProvider` wraps `/chat` with API key, `userToken` (Supabase JWT), components, tools, `tamboUrl`, and optional MCP servers.
+- **Auth** — `userToken` scopes threads and messages to the logged-in user. When using Supabase, set Tambo dashboard **User Authentication → Verification strategy** to **None** (see [Tambo + Supabase auth](docs/TAMBO_SUPABASE_AUTH.md)).
+- **Generative components** — FlowDiagram and Graph are registered in `src/lib/tambo.ts`; the AI renders them in the thread with streamed props.
+- **Tools** — generateFlow, enhanceFlow, exportDiagramAsMermaid, summarizeDiagram; plus countryPopulation and globalPopulation (demo). All defined in `src/lib/tambo.ts`.
+- **Interactables** — Node details panel uses `withInteractable`; the AI updates description, suggestions, notes, tags, status, and related nodes. **Explain** triggers the AI to fill the panel.
+- **Threads** — Tambo manages thread list, current thread, and switching; diagram state is per thread.
+- **Thread input** — Chat uses Tambo thread input; clicking a node pre-fills “Describe this node – [label]”.
+- **Streaming** — FlowDiagram uses streaming so the diagram appears and updates as the AI responds.
+
+---
+
+## Prerequisites
+
+- **Node.js** 18+ (or version compatible with Next.js 15 / React 19)
+- **Tambo API key** — [Tambo](https://docs.tambo.co)
+- **Supabase project** — For auth ([Supabase](https://supabase.com))
+- **OpenAI API key** (optional) — For `/api/generate-flow` when the topic is not in sample flows
+
+---
+
+## Run locally
+
+Make sure you have the [prerequisites](#prerequisites) (Node.js 18+, Tambo API key, Supabase project). Then follow these steps.
+
+### 1. Clone and install
 
 ```bash
+git clone <your-repo-url>
+cd Tambo-Canvas
 npm install
-cp example.env.local .env.local   # Add NEXT_PUBLIC_TAMBO_API_KEY, OPENAI_API_KEY (optional, for generate-flow)
+```
+
+### 2. Configure environment variables
+
+Copy the example env file and open it for editing:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` and set the following (get values from the [Tambo](https://docs.tambo.co) and [Supabase](https://supabase.com) dashboards):
+
+| Variable | Where to get it |
+| -------- | ---------------- |
+| `NEXT_PUBLIC_TAMBO_API_KEY` | Tambo dashboard — required for chat and diagram generation. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → Project URL. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → anon public key. |
+
+Optional:
+
+- `OPENAI_API_KEY` — For dynamic flow generation when the topic is not in sample flows; used only by the `/api/generate-flow` route.
+- `NEXT_PUBLIC_TAMBO_URL` — Only if you use a custom Tambo API base URL.
+- `NEXT_PUBLIC_APP_URL` — Set to `http://localhost:3000` for local dev; use your production URL when deploying.
+
+Never commit `.env.local` or real keys to the repo.
+
+### 3. Start the development server
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Default theme is **dark**.
+The app will be available at [http://localhost:3000](http://localhost:3000).
+
+### 4. Use the app
+
+1. Open [http://localhost:3000](http://localhost:3000) in your browser. You’ll see the landing page.
+2. Click **Try Now** or **Open Editor** to go to `/chat`. If you’re not signed in, you’ll be redirected to **Login**.
+3. Sign up (email/password) or sign in. After auth, you’ll land on the chat page: chat on the left, diagram canvas on the right.
+4. Type a flow description (e.g. “Draw a flow for ride cancellation: user requests, check policy, then refund or reject”) and send. The AI will generate the diagram on the right. Click a node to open the details panel and use **Explain** or edit the pre-filled prompt.
+
+For full auth setup (Supabase redirect URLs, Tambo verification strategy, Google OAuth), see [Tambo + Supabase auth](docs/TAMBO_SUPABASE_AUTH.md).
 
 ---
 
-## Architecture (for Cursor / context)
+## Environment variables
 
-### Tech stack
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `NEXT_PUBLIC_TAMBO_API_KEY` | Yes | Tambo API key |
+| `NEXT_PUBLIC_TAMBO_URL` | No | Tambo API base URL (omit to use default) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon (public) key |
+| `OPENAI_API_KEY` | No | Server-side; used by `/api/generate-flow` |
+| `NEXT_PUBLIC_APP_URL` | No | Production URL for OAuth redirects (e.g. `https://your-app.vercel.app`) |
 
-- **Next.js 15** (App Router), **React 19**, **TypeScript**
-- **Tambo AI** (`@tambo-ai/react`) – generative UI, tools, interactables
-- **React Flow** (`reactflow`) – diagram nodes/edges, layout, controls
-- **Tailwind CSS v4** – theme variables, dark mode, dotted canvas
-- **Zod** – schemas for components and tools
-
-### Layout
-
-- **Left panel**: Chat thread (`MessageThreadFull`), message suggestions, input (textarea + single submit button; no file/MCP/dictation in toolbar).
-- **Right panel**: Diagram canvas (`DiagramCanvas`). Shows either the **latest AI-generated diagram** from the thread or a **welcome diagram** (suggestion titles as nodes). Full height, dotted background, fit-to-view.
-- **Top right**: Theme toggle (dark/light), persisted in `localStorage` (`tamboflow-theme`).
-
-### Key files (where to look)
-
-| Purpose                                                     | Path                                                                        |
-| ----------------------------------------------------------- | --------------------------------------------------------------------------- |
-| **Tambo config** (components + tools)                       | `src/lib/tambo.ts`                                                          |
-| **Main page** (chat + canvas + theme toggle)                | `src/app/page.tsx`                                                          |
-| **Diagram canvas** (right panel, welcome vs latest diagram) | `src/components/tambo/diagram-canvas.tsx`                                   |
-| **Flow diagram** (React Flow wrapper, layout, fit view)     | `src/components/tambo/flow-diagram.tsx`                                     |
-| **Interactable diagram** (Tambo can update props)           | `flow-diagram.tsx` → `InteractableFlowDiagram`                              |
-| **Chat thread + input + suggestions**                       | `src/components/tambo/message-thread-full.tsx`                              |
-| **Theme** (dark default, toggle, script)                    | `src/lib/theme.ts`, `src/app/layout.tsx`, `src/components/theme-toggle.tsx` |
-| **Global styles** (dotted canvas, dark diagram nodes/edges) | `src/app/globals.css`                                                       |
-| **Diagram generation API** (OpenAI → nodes/edges)           | `src/app/api/generate-flow/route.ts`                                        |
-| **Flow layout** (TB auto-layout, ranks, spacing)            | `src/lib/flow-layout.ts`                                                    |
-| **Sample flows + enhanceFlow**                              | `src/services/react-flow.ts`                                                |
-
-### Data flow: diagrams
-
-1. **Generative**: User sends a message (e.g. “Draw a flow for login”). AI calls **`generateFlow`** tool (`tambo.ts`). Tool uses `SAMPLE_FLOWS` or calls **`/api/generate-flow`** (OpenAI). Returns `{ title, description?, nodes, edges }`. AI renders **`FlowDiagram`** (registered in `tambo.ts` components) in the thread; **DiagramCanvas** shows the latest `renderedComponent` on the right.
-2. **Interactable**: When there is no generated diagram, the right panel shows **`InteractableFlowDiagram`** (welcome diagram). Tambo can **update** its props (title, nodes, edges) from natural language; component is wrapped with `withInteractable` in `flow-diagram.tsx`.
-
-### Diagram shape (React Flow)
-
-- **Nodes**: `{ id, label, type?: 'input'|'default'|'output', position: { x, y } }`. Positions can be computed by `getLayoutedPositions()` in `flow-layout.ts` (TB layout).
-- **Edges**: `{ id, source, target }`.
-- **FlowDiagram** accepts `flowDiagramSchema` (title, description?, nodes, edges, height?, className?). Same schema used for generative component and interactable.
-
-### Theme
-
-- **Default**: dark (`getStoredTheme()` returns `"dark"` when nothing in `localStorage`).
-- **Layout script** (`layout.tsx`): inline script sets `document.documentElement.classList.toggle('dark', dark)` before paint; when theme is `"system"` it uses `prefers-color-scheme`.
-- **Right canvas**: Dotted background in light and dark; dark mode uses charcoal + light dots. Node/edge accent in dark: `oklch(0.92 0.11 166)` (mint).
-
-### Environment
-
-- **`NEXT_PUBLIC_TAMBO_API_KEY`** – required for Tambo.
-- **`OPENAI_API_KEY`** – optional; used by `/api/generate-flow` for dynamic diagram generation when topic doesn’t match `SAMPLE_FLOWS`.
+Copy from `.env.example`; never commit real secrets.
 
 ---
 
-## Commands
+## Scripts
 
 ```bash
 npm run dev      # Dev server (localhost:3000)
 npm run build    # Production build
 npm run start    # Production server
 npm run lint     # ESLint
-npm run lint:fix # ESLint with fix
+npm run lint:fix # ESLint with auto-fix
 npx tambo help   # Tambo CLI
 ```
 
 ---
 
-## Adding / changing behavior
+## Project structure
 
-- **New generative component**: Implement in `src/components/tambo/`, define Zod props schema, register in `src/lib/tambo.ts` **components** array. AI can then render it in responses.
-- **New tool**: Implement in `src/services/` (or call API route), define input/output schemas, add to **tools** in `src/lib/tambo.ts`. Keep **API keys only in API routes** (e.g. `generate-flow`), not in client or `tambo.ts`.
-- **Interactable**: Wrap component with `withInteractable(Component, { componentName, description, propsSchema })` and **place it in the tree** (e.g. welcome diagram in `diagram-canvas.tsx`). Do **not** replace the generative component in `tambo.ts` with the interactable.
-- **Styling**: Tailwind + `src/app/globals.css`. Diagram canvas: `.diagram-canvas-dotted`, `.dark .diagram-canvas-dotted`; React Flow overrides under `.dark .diagram-canvas-dotted` for nodes, edges, controls, minimap, attribution hidden.
+- `src/app` — Routes: `/` (landing), `/login`, `/chat`, `/auth/callback`, etc.
+- `src/components/tambo` — Flow diagram, diagram canvas, node details panel, messages, thread.
+- `src/lib/tambo.ts` — Tambo component and tool registration.
+- `src/services` — Flow generation, sample flows, diagram summary.
+- `docs/` — Auth and setup (e.g. [TAMBO_SUPABASE_AUTH.md](docs/TAMBO_SUPABASE_AUTH.md)).
+
+See **CLAUDE.md** in the repo for detailed file roles and development conventions.
+
+---
+
+## Deployment
+
+1. **Build** — `npm run build`. Set all required and optional env vars in your host (e.g. Vercel).
+2. **Supabase** — In the dashboard, set **Site URL** and **Redirect URLs** for production; add your production callback URL (e.g. `https://your-app.vercel.app/auth/callback`).
+3. **Tambo** — In the Tambo dashboard, set **User Authentication → Verification strategy** to **None** when using Supabase JWTs.
 
 ---
 
 ## References
 
-- **Tambo**: [docs.tambo.co](https://docs.tambo.co) · [Interactable components](https://docs.tambo.co/concepts/generative-interfaces/interactable-components)
-- **React Flow**: [reactflow.dev](https://reactflow.dev)
-- **CLAUDE.md** in repo: more detail on Tambo patterns, file structure, and conventions.
+- [Tambo](https://docs.tambo.co) — Docs, [user authentication](https://docs.tambo.co/concepts/user-authentication), [interactables](https://docs.tambo.co/concepts/generative-interfaces/interactable-components)
+- [React Flow](https://reactflow.dev)
+- [Supabase Auth](https://supabase.com/docs/guides/auth)
+- [Tambo + Supabase auth](docs/TAMBO_SUPABASE_AUTH.md) — Step-by-step auth and Tambo setup
