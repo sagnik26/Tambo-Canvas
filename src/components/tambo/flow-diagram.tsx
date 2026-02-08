@@ -94,6 +94,175 @@ const FIT_VIEW_OPTS = {
 
 const PANEL_GAP = 12;
 
+/** Props for the core diagram without Tambo (safe for static/standalone use). */
+export type FlowDiagramCoreProps = FlowDiagramProps & {
+  onNodeClick?: (event: React.MouseEvent, node: Node) => void;
+  onPaneClick?: () => void;
+  extraContent?: React.ReactNode;
+};
+
+/**
+ * Core flow diagram with no Tambo hooks. Use this on pages without TamboProvider
+ * (e.g. /test-flow). For chat, use FlowDiagram which adds selection + thread input.
+ */
+export function FlowDiagramCore({
+  title,
+  description,
+  nodes: nodesProp,
+  edges: edgesProp,
+  height,
+  className,
+  onNodeClick,
+  onPaneClick,
+  extraContent,
+}: FlowDiagramCoreProps) {
+  const fillContainer = React.useContext(DiagramCanvasFillContext);
+  const safeNodes = Array.isArray(nodesProp) ? nodesProp : [];
+  const safeEdges = Array.isArray(edgesProp) ? edgesProp : [];
+
+  const { flowNodes, flowEdgesComputed } = React.useMemo(() => {
+    const ids = safeNodes.map((n, i) => `${String(n.id)}-${i}`);
+    const idFor = (raw: string) =>
+      ids[safeNodes.findIndex((n) => n.id === raw)] ?? raw;
+
+    const layoutPositions = getLayoutedPositions(
+      ids,
+      safeEdges.map((e) => ({
+        source: idFor(e.source),
+        target: idFor(e.target),
+      })),
+      "TB"
+    );
+
+    const nodes: Node[] = safeNodes.map((node, i) => {
+      const pos = layoutPositions.get(ids[i]);
+      const x =
+        pos?.x != null && Number.isFinite(pos.x)
+          ? pos.x
+          : node.position?.x ?? i * 200;
+      const y =
+        pos?.y != null && Number.isFinite(pos.y)
+          ? pos.y
+          : node.position?.y ?? 50;
+      return {
+        id: ids[i],
+        type: node.type,
+        position: { x: Number(x), y: Number(y) },
+        data: { label: node.label },
+      };
+    });
+
+    const edges: Edge[] = safeEdges.map((e, i) => ({
+      id: `e-${i}`,
+      source: idFor(e.source),
+      target: idFor(e.target),
+    }));
+
+    return { flowNodes: nodes, flowEdgesComputed: edges };
+  }, [safeNodes, safeEdges]);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(flowNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(flowEdgesComputed);
+
+  const diagramKeyRef = useRef<string>("");
+  const diagramKey =
+    safeNodes.length +
+    "|" +
+    safeEdges.length +
+    "|" +
+    safeNodes.map((n) => n.id).join(",");
+  useEffect(() => {
+    if (diagramKeyRef.current === diagramKey) return;
+    diagramKeyRef.current = diagramKey;
+    setNodes(flowNodes);
+    setEdges(flowEdgesComputed);
+  }, [diagramKey, flowNodes, flowEdgesComputed, setNodes, setEdges]);
+
+  const diagramHeight = React.useMemo(() => {
+    if (nodes.length === 0) return MIN_DIAGRAM_HEIGHT;
+    const minY = Math.min(...nodes.map((n) => n.position.y));
+    const maxY = Math.max(
+      ...nodes.map((n) => n.position.y + LAYOUT_NODE_HEIGHT)
+    );
+    const h = maxY - minY + DIAGRAM_PADDING;
+    return Math.max(
+      MIN_DIAGRAM_HEIGHT,
+      Math.min(MAX_DIAGRAM_HEIGHT, Math.ceil(h))
+    );
+  }, [nodes]);
+
+  const resolvedHeight = fillContainer
+    ? undefined
+    : height != null
+    ? height
+    : HEADER_HEIGHT + diagramHeight;
+
+  return (
+    <div
+      className={cn(
+        "w-full flex flex-col overflow-hidden",
+        !fillContainer &&
+          "rounded-lg border bg-card text-card-foreground shadow-sm",
+        fillContainer ? "h-full" : "",
+        className
+      )}
+      style={
+        fillContainer
+          ? { height: "100%" }
+          : resolvedHeight != null
+          ? { height: resolvedHeight }
+          : { height: "100%" }
+      }
+    >
+      {!fillContainer && (
+        <div className="border-b px-4 py-2 flex flex-col gap-1 bg-muted/40 shrink-0">
+          <h3 className="text-sm font-medium leading-tight">{title}</h3>
+          {description && (
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              {description}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div
+        className={cn(
+          "flex-1 min-h-0 w-full relative",
+          fillContainer && "h-full min-h-[50vh] overflow-hidden"
+        )}
+      >
+        <ReactFlowProvider>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
+            onInit={(instance) => instance.fitView(FIT_VIEW_OPTS)}
+            fitView
+            fitViewOptions={FIT_VIEW_OPTS}
+            minZoom={0.01}
+            maxZoom={1}
+            nodesDraggable
+            elementsSelectable
+            proOptions={{ hideAttribution: true }}
+          >
+            <FitViewOnLoad nodeCount={nodes.length} />
+            <MiniMap
+              nodeStrokeColor="var(--muted-foreground)"
+              nodeColor="var(--muted)"
+              maskColor="rgba(0,0,0,0.05)"
+            />
+            <Controls />
+          </ReactFlow>
+          {extraContent}
+        </ReactFlowProvider>
+      </div>
+    </div>
+  );
+}
+
 /** Renders the node details panel positioned beside the selected node (inside ReactFlowProvider). */
 function NodeDetailsPanelOverlay() {
   const { selectedNode } = useSelectedNode();
@@ -169,175 +338,40 @@ function DiagramStreamingSkeleton() {
  * The AI only needs to provide `nodes` and `edges`. We take care of
  * mapping `label` -> React Flow `data.label` and wiring up basic chrome.
  */
-export function FlowDiagram({
-  title,
-  description,
-  nodes: nodesProp,
-  edges: edgesProp,
-  height,
-  className,
-}: FlowDiagramProps) {
-  const fillContainer = React.useContext(DiagramCanvasFillContext);
+/**
+ * Flow diagram with Tambo integration (selection + thread input). Must be used
+ * within SelectedNodeProvider, TamboThreadInputProvider, etc. (e.g. on /chat).
+ */
+export function FlowDiagram(props: FlowDiagramProps) {
   const { setSelectedNode } = useSelectedNode();
   const { setValue } = useTamboThreadInput();
-  const safeNodes = Array.isArray(nodesProp) ? nodesProp : [];
-  const safeEdges = Array.isArray(edgesProp) ? edgesProp : [];
 
-  // Use id + index so every node has a unique key (avoids duplicate key warning)
-  const { flowNodes, flowEdgesComputed } = React.useMemo(() => {
-    const ids = safeNodes.map((n, i) => `${String(n.id)}-${i}`);
-    const idFor = (raw: string) =>
-      ids[safeNodes.findIndex((n) => n.id === raw)] ?? raw;
+  const handleNodeClick = React.useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      const label =
+        (node.data as { label?: string } | undefined)?.label ?? node.id;
+      setSelectedNode({
+        id: node.id,
+        label,
+        flowPosition: { x: node.position.x, y: node.position.y },
+      });
+      setValue(`Describe this node - ${label}`);
+    },
+    [setSelectedNode, setValue]
+  );
 
-    const layoutPositions = getLayoutedPositions(
-      ids,
-      safeEdges.map((e) => ({
-        source: idFor(e.source),
-        target: idFor(e.target),
-      })),
-      "TB"
-    );
-
-    const nodes: Node[] = safeNodes.map((node, i) => {
-      const pos = layoutPositions.get(ids[i]);
-      const x =
-        pos?.x != null && Number.isFinite(pos.x)
-          ? pos.x
-          : node.position?.x ?? i * 200;
-      const y =
-        pos?.y != null && Number.isFinite(pos.y)
-          ? pos.y
-          : node.position?.y ?? 50;
-      return {
-        id: ids[i],
-        type: node.type,
-        position: { x: Number(x), y: Number(y) },
-        data: { label: node.label },
-      };
-    });
-
-    const edges: Edge[] = safeEdges.map((e, i) => ({
-      id: `e-${i}`,
-      source: idFor(e.source),
-      target: idFor(e.target),
-    }));
-
-    return { flowNodes: nodes, flowEdgesComputed: edges };
-  }, [safeNodes, safeEdges]);
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(flowNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(flowEdgesComputed);
-
-  const diagramKeyRef = useRef<string>("");
-  const diagramKey =
-    safeNodes.length +
-    "|" +
-    safeEdges.length +
-    "|" +
-    safeNodes.map((n) => n.id).join(",");
-  useEffect(() => {
-    if (diagramKeyRef.current === diagramKey) return;
-    diagramKeyRef.current = diagramKey;
-    setNodes(flowNodes);
-    setEdges(flowEdgesComputed);
-    // Only re-sync when diagram identity changes (stable key), not on every parent re-render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [diagramKey]);
-
-  const diagramHeight = React.useMemo(() => {
-    if (nodes.length === 0) return MIN_DIAGRAM_HEIGHT;
-    const minY = Math.min(...nodes.map((n) => n.position.y));
-    const maxY = Math.max(
-      ...nodes.map((n) => n.position.y + LAYOUT_NODE_HEIGHT)
-    );
-    const h = maxY - minY + DIAGRAM_PADDING;
-    return Math.max(
-      MIN_DIAGRAM_HEIGHT,
-      Math.min(MAX_DIAGRAM_HEIGHT, Math.ceil(h))
-    );
-  }, [nodes]);
-
-  const resolvedHeight = fillContainer
-    ? undefined
-    : height != null
-    ? height
-    : HEADER_HEIGHT + diagramHeight;
+  const handlePaneClick = React.useCallback(() => {
+    setSelectedNode(null);
+    setValue("");
+  }, [setSelectedNode, setValue]);
 
   return (
-    <div
-      className={cn(
-        "w-full flex flex-col overflow-hidden",
-        !fillContainer &&
-          "rounded-lg border bg-card text-card-foreground shadow-sm",
-        fillContainer ? "h-full" : "",
-        className
-      )}
-      style={
-        fillContainer
-          ? { height: "100%" }
-          : resolvedHeight != null
-          ? { height: resolvedHeight }
-          : { height: "100%" }
-      }
-    >
-      {!fillContainer && (
-        <div className="border-b px-4 py-2 flex flex-col gap-1 bg-muted/40 shrink-0">
-          <h3 className="text-sm font-medium leading-tight">{title}</h3>
-          {description && (
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {description}
-            </p>
-          )}
-        </div>
-      )}
-
-      <div
-        className={cn(
-          "flex-1 min-h-0 w-full relative",
-          fillContainer && "h-full min-h-[50vh] overflow-hidden"
-        )}
-      >
-        <ReactFlowProvider>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeClick={(_event, node) => {
-              const label =
-                  (node.data as { label?: string } | undefined)?.label ?? node.id;
-              setSelectedNode({
-                id: node.id,
-                label,
-                flowPosition: { x: node.position.x, y: node.position.y },
-              });
-              setValue(`Describe this node - ${label}`);
-            }}
-            onPaneClick={() => {
-              setSelectedNode(null);
-              setValue("");
-            }}
-            onInit={(instance) => instance.fitView(FIT_VIEW_OPTS)}
-            fitView
-            fitViewOptions={FIT_VIEW_OPTS}
-            minZoom={0.01}
-            maxZoom={1}
-            nodesDraggable
-            elementsSelectable
-            proOptions={{ hideAttribution: true }}
-          >
-            <FitViewOnLoad nodeCount={nodes.length} />
-            <MiniMap
-              nodeStrokeColor="var(--muted-foreground)"
-              nodeColor="var(--muted)"
-              maskColor="rgba(0,0,0,0.05)"
-            />
-            <Controls />
-          </ReactFlow>
-          <NodeDetailsPanelOverlay />
-        </ReactFlowProvider>
-      </div>
-    </div>
+    <FlowDiagramCore
+      {...props}
+      onNodeClick={handleNodeClick}
+      onPaneClick={handlePaneClick}
+      extraContent={<NodeDetailsPanelOverlay />}
+    />
   );
 }
 

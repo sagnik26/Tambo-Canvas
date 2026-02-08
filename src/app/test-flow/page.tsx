@@ -1,6 +1,6 @@
  "use client";
 
-import { FlowDiagram } from "@/components/tambo/flow-diagram";
+import { FlowDiagramCore } from "@/components/tambo/flow-diagram";
 
 const TEST_NODES = [
   { id: "1", label: "Start", type: "input" as const, position: { x: 0, y: 50 } },
@@ -33,7 +33,7 @@ const TEST_EDGES = [
 export default function TestFlowPage() {
   return (
     <div className="h-screen w-full p-8 bg-background">
-      <FlowDiagram
+      <FlowDiagramCore
         title="Test CI/CD Flow"
         description="Static test diagram rendered directly from Next.js, without Tambo."
         nodes={TEST_NODES}
