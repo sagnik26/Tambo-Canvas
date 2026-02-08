@@ -3,6 +3,7 @@
 import { useTambo } from "@tambo-ai/react";
 import * as React from "react";
 import { FlowDiagram } from "@/components/tambo/flow-diagram";
+import { SelectedNodeProvider } from "@/lib/selected-node-context";
 
 export const DiagramCanvasFillContext = React.createContext(false);
 
@@ -57,7 +58,7 @@ interface DiagramCanvasProps {
   canvasRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-export function DiagramCanvas({ canvasRef }: DiagramCanvasProps) {
+function DiagramCanvasInner({ canvasRef }: DiagramCanvasProps) {
   const { thread, streaming } = useTambo();
   const messages = thread?.messages ?? [];
 
@@ -110,5 +111,13 @@ export function DiagramCanvas({ canvasRef }: DiagramCanvasProps) {
         </div>
       </DiagramCanvasFillContext.Provider>
     </div>
+  );
+}
+
+export function DiagramCanvas(props: DiagramCanvasProps) {
+  return (
+    <SelectedNodeProvider>
+      <DiagramCanvasInner {...props} />
+    </SelectedNodeProvider>
   );
 }

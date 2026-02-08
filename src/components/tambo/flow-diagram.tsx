@@ -4,7 +4,10 @@ import { DiagramCanvasFillContext } from "@/components/tambo/diagram-canvas";
 import {
   getLayoutedPositions,
   NODE_HEIGHT as LAYOUT_NODE_HEIGHT,
+  NODE_WIDTH as LAYOUT_NODE_WIDTH,
 } from "@/lib/flow-layout";
+import { useSelectedNode } from "@/lib/selected-node-context";
+import { InteractableNodeDetailsPanel } from "@/components/tambo/node-details-panel";
 import { cn } from "@/lib/utils";
 import { useTamboStreamStatus } from "@tambo-ai/react";
 
@@ -89,6 +92,36 @@ const FIT_VIEW_OPTS = {
   includeHiddenNodes: false,
 };
 
+const PANEL_GAP = 12;
+
+/** Renders the node details panel positioned beside the selected node (inside ReactFlowProvider). */
+function NodeDetailsPanelOverlay() {
+  const { selectedNode } = useSelectedNode();
+  const { getViewport } = useReactFlow();
+  const viewport = getViewport();
+  if (!selectedNode) return null;
+  const { flowPosition } = selectedNode;
+  const left =
+    viewport.x + flowPosition.x * viewport.zoom + LAYOUT_NODE_WIDTH + PANEL_GAP;
+  const top = viewport.y + flowPosition.y * viewport.zoom;
+  return (
+    <div
+      className="absolute z-10 pointer-events-auto"
+      style={{ left, top }}
+      aria-label="Node details"
+    >
+      <InteractableNodeDetailsPanel
+        key={selectedNode.id}
+        interactableId={`node-details-${selectedNode.id}`}
+        nodeId={selectedNode.id}
+        nodeLabel={selectedNode.label}
+        description=""
+        suggestions={[]}
+      />
+    </div>
+  );
+}
+
 /** Keeps the diagram fitted and centered: on load, after delays (for layout), and on window resize. */
 function FitViewOnLoad({ nodeCount }: { nodeCount: number }) {
   const { fitView } = useReactFlow();
@@ -145,6 +178,7 @@ export function FlowDiagram({
   className,
 }: FlowDiagramProps) {
   const fillContainer = React.useContext(DiagramCanvasFillContext);
+  const { setSelectedNode } = useSelectedNode();
   const safeNodes = Array.isArray(nodesProp) ? nodesProp : [];
   const safeEdges = Array.isArray(edgesProp) ? edgesProp : [];
 
@@ -258,7 +292,7 @@ export function FlowDiagram({
 
       <div
         className={cn(
-          "flex-1 min-h-0 w-full",
+          "flex-1 min-h-0 w-full relative",
           fillContainer && "h-full min-h-[50vh] overflow-hidden"
         )}
       >
@@ -268,6 +302,15 @@ export function FlowDiagram({
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            onNodeClick={(_event, node) =>
+              setSelectedNode({
+                id: node.id,
+                label:
+                  (node.data as { label?: string } | undefined)?.label ?? node.id,
+                flowPosition: { x: node.position.x, y: node.position.y },
+              })
+            }
+            onPaneClick={() => setSelectedNode(null)}
             onInit={(instance) => instance.fitView(FIT_VIEW_OPTS)}
             fitView
             fitViewOptions={FIT_VIEW_OPTS}
@@ -285,6 +328,7 @@ export function FlowDiagram({
             />
             <Controls />
           </ReactFlow>
+          <NodeDetailsPanelOverlay />
         </ReactFlowProvider>
       </div>
     </div>
