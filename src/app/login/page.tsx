@@ -59,7 +59,12 @@ function LoginForm() {
   async function handleSignInWithGoogle() {
     setLoading(true);
     setMessage(null);
-    const redirectTo = `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback?next=${encodeURIComponent(next)}`;
+    // Use NEXT_PUBLIC_APP_URL in production so OAuth redirects to your deployed domain, not localhost
+    const baseUrl =
+      typeof window !== "undefined"
+        ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin)
+        : process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const redirectTo = `${baseUrl.replace(/\/$/, "")}/auth/callback?next=${encodeURIComponent(next)}`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo },

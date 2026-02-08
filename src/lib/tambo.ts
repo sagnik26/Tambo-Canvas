@@ -13,7 +13,6 @@ import {
   FlowDiagramWithStreaming,
   flowDiagramSchema,
 } from "@/components/tambo/flow-diagram";
-import { DataCard, dataCardSchema } from "@/components/ui/card-data";
 import {
   getCountryPopulations,
   getGlobalPopulationTrend,
@@ -82,7 +81,7 @@ export const tools: TamboTool[] = [
         population: z.number(),
         year: z.number(),
         growthRate: z.number(),
-      })
+      }),
     ),
   },
   {
@@ -99,7 +98,7 @@ export const tools: TamboTool[] = [
         year: z.number(),
         population: z.number(),
         growthRate: z.number(),
-      })
+      }),
     ),
   },
   {
@@ -113,7 +112,7 @@ export const tools: TamboTool[] = [
       const matchingFlow = Object.entries(SAMPLE_FLOWS).find(
         ([key]) =>
           normalizedTopic.includes(key.split(" ")[0]) ||
-          key.includes(normalizedTopic.split(" ")[0])
+          key.includes(normalizedTopic.split(" ")[0]),
       );
 
       if (matchingFlow) {
@@ -208,7 +207,7 @@ export const tools: TamboTool[] = [
               n &&
               n.position &&
               typeof n.position.y === "number" &&
-              typeof n.position.x === "number"
+              typeof n.position.x === "number",
           )
         : [];
       const safeCurrentEdges = Array.isArray(currentEdges) ? currentEdges : [];
@@ -242,7 +241,7 @@ export const tools: TamboTool[] = [
         title: "Flow enhancement",
         description: `Added ${enhancementType.replace(
           /_/g,
-          " "
+          " ",
         )} to your flow.`,
         nodes: [...safeCurrentNodes, ...positionedNewNodes],
         edges: [...safeCurrentEdges, ...enhancement.edges],
@@ -252,7 +251,7 @@ export const tools: TamboTool[] = [
       enhancementType: z
         .enum(["add_error_handling", "add_security", "add_monitoring"])
         .describe(
-          "Type of enhancement to add (error handling, security, or monitoring)"
+          "Type of enhancement to add (error handling, security, or monitoring)",
         ),
       currentNodes: z
         .array(reactFlowNodeSchema)
@@ -274,13 +273,6 @@ export const tools: TamboTool[] = [
  */
 export const components: TamboComponent[] = [
   {
-    name: "Graph",
-    description:
-      "A component that renders various types of charts (bar, line, pie) using Recharts. Supports customizable data visualization with labels, datasets, and styling options.",
-    component: Graph,
-    propsSchema: graphSchema,
-  },
-  {
     name: "FlowDiagram",
     description:
       "A React Flow–based diagram component for visualizing high-level architecture and system flows, with support for AI-driven generation and enhancements.",
@@ -288,11 +280,10 @@ export const components: TamboComponent[] = [
     propsSchema: flowDiagramSchema,
   },
   {
-    name: "DataCard",
+    name: "Graph",
     description:
-      "A component that displays options as clickable cards with links and summaries with the ability to select multiple items.",
-    component: DataCard,
-    propsSchema: dataCardSchema,
+      "A component that renders various types of charts (bar, line, pie) using Recharts. Supports customizable data visualization with labels, datasets, and styling options.",
+    component: Graph,
+    propsSchema: graphSchema,
   },
-  // Add more components here
 ];

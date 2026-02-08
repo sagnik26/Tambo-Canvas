@@ -11,10 +11,15 @@ This app uses [Supabase Auth](https://supabase.com/docs/guides/auth) and passes 
 - In the Supabase dashboard: **Authentication** → **Providers**. Enable **Email** (and optionally **Google** or other OAuth providers).
 - For email sign-up you may want to configure **Authentication** → **Email Templates** and **Redirect URLs** (see below).
 
+### Site URL (important for OAuth)
+- **Authentication** → **URL Configuration** → **Site URL**: set this to your **production** URL (e.g. `https://your-app.vercel.app`).  
+  If this is left as `http://localhost:3000`, Supabase may redirect users back to localhost after Google sign-in even when they started on your deployed site.
+
 ### Redirect URLs
-- **Authentication** → **URL Configuration** → **Redirect URLs**: add your app URLs, e.g.:
+- **Authentication** → **URL Configuration** → **Redirect URLs**: add **both**:
   - `http://localhost:3000/auth/callback` (development)
-  - `https://yourdomain.com/auth/callback` (production)
+  - `https://your-production-domain.com/auth/callback` (production; use your real domain, e.g. `https://tambo-canvas.vercel.app/auth/callback`)  
+  Supabase will only redirect to URLs listed here; the app sends the full callback URL via `redirectTo`, but Site URL and this list must allow it.
 
 ### Env vars
 In `.env.local` add (from **Project Settings** → **API**):
@@ -25,6 +30,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 Use the **anon** (public) key, not the service role key.
+
+**Optional (production):** Set `NEXT_PUBLIC_APP_URL` to your deployed URL (e.g. `https://your-app.vercel.app`) in Vercel (or your host) environment variables. The app uses this as the base for OAuth redirects so Google sign-in returns to your production domain instead of localhost.
 
 ---
 
