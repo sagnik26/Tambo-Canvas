@@ -1,9 +1,12 @@
 "use client";
 
-import { useTambo } from "@tambo-ai/react";
+import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
 import * as React from "react";
 import { FlowDiagram } from "@/components/tambo/flow-diagram";
-import { SelectedNodeProvider } from "@/lib/selected-node-context";
+import {
+  SelectedNodeProvider,
+  useSelectedNode,
+} from "@/lib/selected-node-context";
 
 export const DiagramCanvasFillContext = React.createContext(false);
 
@@ -60,6 +63,23 @@ interface DiagramCanvasProps {
 
 function DiagramCanvasInner({ canvasRef }: DiagramCanvasProps) {
   const { thread, streaming } = useTambo();
+  const { setValue } = useTamboThreadInput();
+  const { setSelectedNode } = useSelectedNode();
+  const prevThreadIdRef = React.useRef<string | undefined>(undefined);
+
+  // When switching threads: clear input and close node details panel
+  React.useEffect(() => {
+    const currentId = thread?.id;
+    if (
+      prevThreadIdRef.current !== undefined &&
+      prevThreadIdRef.current !== currentId
+    ) {
+      setValue("");
+      setSelectedNode(null);
+    }
+    prevThreadIdRef.current = currentId;
+  }, [thread?.id, setValue, setSelectedNode]);
+
   const messages = thread?.messages ?? [];
 
   const latestDiagram = React.useMemo(() => {

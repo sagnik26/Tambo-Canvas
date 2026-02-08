@@ -9,7 +9,7 @@ import {
 import { useSelectedNode } from "@/lib/selected-node-context";
 import { InteractableNodeDetailsPanel } from "@/components/tambo/node-details-panel";
 import { cn } from "@/lib/utils";
-import { useTamboStreamStatus } from "@tambo-ai/react";
+import { useTamboStreamStatus, useTamboThreadInput } from "@tambo-ai/react";
 
 const DIAGRAM_PADDING = 80;
 const MIN_DIAGRAM_HEIGHT = 280;
@@ -179,6 +179,7 @@ export function FlowDiagram({
 }: FlowDiagramProps) {
   const fillContainer = React.useContext(DiagramCanvasFillContext);
   const { setSelectedNode } = useSelectedNode();
+  const { setValue } = useTamboThreadInput();
   const safeNodes = Array.isArray(nodesProp) ? nodesProp : [];
   const safeEdges = Array.isArray(edgesProp) ? edgesProp : [];
 
@@ -302,15 +303,20 @@ export function FlowDiagram({
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onNodeClick={(_event, node) =>
+            onNodeClick={(_event, node) => {
+              const label =
+                  (node.data as { label?: string } | undefined)?.label ?? node.id;
               setSelectedNode({
                 id: node.id,
-                label:
-                  (node.data as { label?: string } | undefined)?.label ?? node.id,
+                label,
                 flowPosition: { x: node.position.x, y: node.position.y },
-              })
-            }
-            onPaneClick={() => setSelectedNode(null)}
+              });
+              setValue(`Describe this node - ${label}`);
+            }}
+            onPaneClick={() => {
+              setSelectedNode(null);
+              setValue("");
+            }}
             onInit={(instance) => instance.fitView(FIT_VIEW_OPTS)}
             fitView
             fitViewOptions={FIT_VIEW_OPTS}
