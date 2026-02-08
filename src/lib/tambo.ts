@@ -54,6 +54,73 @@ const reactFlowDiagramSchema = z.object({
   edges: z.array(reactFlowEdgeSchema),
 });
 
+/** Escape a label for Mermaid: wrap in double quotes if it contains ] [ or ", and escape " inside. */
+function mermaidEscapeLabel(label: string): string {
+  const needsQuotes = /[[\]"]/.test(label);
+  if (!needsQuotes) return label;
+  return `"${label.replace(/"/g, '""')}"`;
+}
+
+/** Get display label from a node; supports both our schema (node.label) and React Flow internal (node.data.label). */
+function getNodeLabel(
+  node: z.infer<typeof reactFlowNodeSchema> & { data?: { label?: string } },
+  index: number,
+): string {
+  const raw =
+    node.label ??
+    (node as { data?: { label?: string } }).data?.label ??
+    `Step ${index + 1}`;
+  return String(raw).trim() || `Step ${index + 1}`;
+}
+
+/** Convert flow nodes and edges to a Mermaid flowchart string. */
+function nodesEdgesToMermaid(
+  nodes: (z.infer<typeof reactFlowNodeSchema> & { data?: { label?: string } })[],
+  edges: z.infer<typeof reactFlowEdgeSchema>[],
+  direction: "TD" | "LR" = "TD",
+): string {
+  if (nodes.length === 0) return `flowchart ${direction}\n  %% no nodes`;
+  const idByIndex = new Map<number, string>();
+  nodes.forEach((_, i) => idByIndex.set(i, `n${i}`));
+  // Stable id per node: use node.id if present and unique, else _i to avoid duplicate-id collapse
+  const indexById = new Map<string, number>();
+  nodes.forEach((n, i) => {
+    const id = n.id != null && String(n.id).trim() !== "" ? String(n.id) : `_i${i}`;
+    if (!indexById.has(id)) indexById.set(id, i);
+  });
+  // If any node didn't get a unique id, map by index as fallback (e.g. "_i0", "_i1")
+  nodes.forEach((n, i) => {
+    const id = `_i${i}`;
+    if (!indexById.has(id)) indexById.set(id, i);
+  });
+
+  const lines: string[] = [`flowchart ${direction}`];
+  nodes.forEach((node, i) => {
+    const mid = idByIndex.get(i)!;
+    const label = mermaidEscapeLabel(getNodeLabel(node, i));
+    lines.push(`  ${mid}[${label}]`);
+  });
+  const seenEdges = new Set<string>();
+  edges.forEach((edge) => {
+    const si =
+      indexById.get(edge.source) ??
+      indexById.get(`_i${Number(edge.source)}`) ??
+      (Number.isFinite(Number(edge.source)) ? Number(edge.source) : undefined);
+    const ti =
+      indexById.get(edge.target) ??
+      indexById.get(`_i${Number(edge.target)}`) ??
+      (Number.isFinite(Number(edge.target)) ? Number(edge.target) : undefined);
+    if (si !== undefined && ti !== undefined && si >= 0 && ti >= 0 && si < nodes.length && ti < nodes.length && si !== ti) {
+      const key = `${si}-${ti}`;
+      if (!seenEdges.has(key)) {
+        seenEdges.add(key);
+        lines.push(`  ${idByIndex.get(si)} --> ${idByIndex.get(ti)}`);
+      }
+    }
+  });
+  return lines.join("\n");
+}
+
 export const tools: TamboTool[] = [
   {
     name: "countryPopulation",
@@ -261,6 +328,56 @@ export const tools: TamboTool[] = [
         .describe("Current edges in the diagram to be enhanced"),
     }),
     outputSchema: reactFlowDiagramSchema,
+  },
+  {
+    name: "exportDiagramAsMermaid",
+    description:
+      "Converts the current flow diagram (nodes and edges) into a Mermaid flowchart string. Use this when the user asks to export the diagram as Mermaid, get Mermaid code, share the flow as text, or copy the diagram in Mermaid format. Pass the same nodes and edges from the latest FlowDiagram in the conversation.",
+    tool: async ({
+      currentNodes,
+      currentEdges,
+      direction = "TD",
+    }: {
+      currentNodes: z.infer<typeof reactFlowNodeSchema>[];
+      currentEdges: z.infer<typeof reactFlowEdgeSchema>[];
+      direction?: "TD" | "LR";
+    }) => {
+      const nodes = Array.isArray(currentNodes) ? currentNodes : [];
+      const edges = Array.isArray(currentEdges) ? currentEdges : [];
+      const mermaid = nodesEdgesToMermaid(nodes, edges, direction ?? "TD");
+      return {
+        mermaid,
+        message:
+          nodes.length === 0
+            ? "No nodes in the diagram; here is an empty Mermaid template."
+            : `Mermaid flowchart with ${nodes.length} node(s) and ${edges.length} edge(s). You can render this in a Mermaid viewer or paste it into documentation.`,
+      };
+    },
+    inputSchema: z.object({
+      currentNodes: z
+        .array(reactFlowNodeSchema)
+        .describe(
+          "Current nodes in the flow diagram (from the latest FlowDiagram component)",
+        ),
+      currentEdges: z
+        .array(reactFlowEdgeSchema)
+        .describe(
+          "Current edges in the flow diagram (from the latest FlowDiagram component)",
+        ),
+      direction: z
+        .enum(["TD", "LR"])
+        .optional()
+        .describe(
+          "Flow direction: TD = top-down, LR = left-right (default TD)",
+        ),
+    }),
+    outputSchema: z.object({
+      mermaid: z.string().describe("The Mermaid flowchart code"),
+      message: z
+        .string()
+        .optional()
+        .describe("Short explanation for the user"),
+    }),
   },
 ];
 
