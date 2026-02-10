@@ -4,7 +4,7 @@ AI-powered flow diagrams from natural language — chat on the left, diagram on 
 
 **[Watch the demo on YouTube](https://www.youtube.com/watch?v=9upEMbKmFOM)**
 
----
+**[Watch the full walkaround on youtube](https://www.youtube.com/watch?v=rIA7kmP7wSg)**
 
 ## Features
 
